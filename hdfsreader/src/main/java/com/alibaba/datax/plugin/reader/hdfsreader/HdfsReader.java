@@ -257,21 +257,24 @@ public class HdfsReader extends Reader {
             LOG.info("read start");
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
-
+                // 读取text格式
                 if(specifiedFileType.equalsIgnoreCase(Constant.TEXT)
                         || specifiedFileType.equalsIgnoreCase(Constant.CSV)) {
 
                     InputStream inputStream = dfsUtil.getInputStream(sourceFile);
                     UnstructuredStorageReaderUtil.readFromStream(inputStream, sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
-                }else if(specifiedFileType.equalsIgnoreCase(Constant.ORC)){
-
+                }
+                // 读取orc格式
+                else if(specifiedFileType.equalsIgnoreCase(Constant.ORC)){
                     dfsUtil.orcFileStartRead(sourceFile, this.taskConfig, recordSender, this.getTaskPluginCollector());
-                }else if(specifiedFileType.equalsIgnoreCase(Constant.SEQ)){
-
+                }
+                // 读取seq格式
+                else if(specifiedFileType.equalsIgnoreCase(Constant.SEQ)){
                     dfsUtil.sequenceFileStartRead(sourceFile, this.taskConfig, recordSender, this.getTaskPluginCollector());
-                }else if(specifiedFileType.equalsIgnoreCase(Constant.RC)){
-
+                }
+                // 读取rc格式
+                else if(specifiedFileType.equalsIgnoreCase(Constant.RC)){
                     dfsUtil.rcFileStartRead(sourceFile, this.taskConfig, recordSender, this.getTaskPluginCollector());
                 }else {
 

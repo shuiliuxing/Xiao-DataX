@@ -1,0 +1,48 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 3
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "hdfsreader",
+                    "parameter": {
+                        "path": "/apps/hive/warehouse/test.db/new_test/*",
+                        "defaultFS": "hdfs://hacluster",
+                        "hadoopConfig":{
+                            "dfs.nameservices": "hacluster",
+                            "dfs.ha.namenodes.hacluster": "nn1,nn2",
+                            "dfs.namenode.rpc-address.hacluster.nn1": "192.168.5.201:8020",
+                            "dfs.namenode.rpc-address.hacluster.nn2": "192.168.5.202:8020",
+                            "dfs.client.failover.proxy.provider.hacluster": "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+                        },
+                        "column": [
+                               {
+                                "index": 0,
+                                "type": "string"
+                               },
+                               {
+                                "index": 1,
+                                "type": "long"
+                               }
+                        ],
+                        "fileType": "orc",
+                        "encoding": "UTF-8"
+
+                    }
+
+                },
+                "writer": {
+                    "name": "streamwriter",
+                    "parameter": {
+                        "encode": "UTF-8",
+                        "print": true
+                    }
+                }
+            }
+        ]
+    }
+}
