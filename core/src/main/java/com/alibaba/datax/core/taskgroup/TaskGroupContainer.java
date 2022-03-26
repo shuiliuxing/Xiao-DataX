@@ -121,6 +121,7 @@ public class TaskGroupContainer extends AbstractContainer {
             
             List<Configuration> taskConfigs = this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
+            System.out.println("此时task数量"+taskConfigs.size());
 
             if(LOG.isDebugEnabled()) {
                 LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
@@ -296,6 +297,17 @@ public class TaskGroupContainer extends AbstractContainer {
             }
         }
     }
+    /*
+    上述实现主要分为以下几个步骤：
+      1、初始化task执行相关的状态信息，分别是taskId->Congifuration的map、待运行的任务队列taskQueue、运行失败任务taskFailedExecutorMap、运行中的任务runTasks、任务开始时间taskStartTimeMap
+      2、循环检测所有任务的执行状态
+        1）判断是否有失败的task，如果有则放入失败对立中，并查看当前的执行是否支持重跑和failOver，如果支持则重新放回执行队列中；如果没有失败，则标记任务执行成功，并从状态轮询map中移除
+        2）如果发现有失败的任务，则汇报当前TaskGroup的状态，并抛出异常
+        3）查看当前执行队列的长度，如果发现执行队列还有通道，则构建TaskExecutor加入执行队列，并从待运行移除
+        4）检查执行队列和所有的任务状态，如果所有的任务都执行成功，则汇报taskGroup的状态并从循环中退出
+        5）检查当前时间是否超过汇报时间检测，如果是，则汇报当前状态
+        6）当所有的执行完成从while中退出之后，再次全局汇报当前的任务状态
+   */
     
     private Map<Integer, Configuration> buildTaskConfigMap(List<Configuration> configurations){
     	Map<Integer, Configuration> map = new HashMap<Integer, Configuration>();
@@ -349,6 +361,7 @@ public class TaskGroupContainer extends AbstractContainer {
         communication.setState(State.FAILED);
     }
 
+    /*至此，taskGroup中的所有执行完成，上述taskGroup的运行队列只是将负责对task任务进行调度，具体的执行还是TaskExecutor负责实现*/
     /**
      * TaskExecutor是一个完整task的执行器
      * 其中包括1：1的reader和writer

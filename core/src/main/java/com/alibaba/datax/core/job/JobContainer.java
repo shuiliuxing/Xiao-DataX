@@ -106,17 +106,24 @@ public class JobContainer extends AbstractContainer {
                 this.preCheck();
             } else {
                 userConf = configuration.clone();
+
+                //没有使用到，前置操作，加载job插件等
                 LOG.debug("jobContainer starts to do preHandle ...");
                 this.preHandle();
 
+                //reader和writer的初始化
                 LOG.debug("jobContainer starts to do init ...");
                 this.init();
+
                 LOG.info("jobContainer starts to do prepare ...");
                 this.prepare();
+
                 LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
+
                 LOG.info("jobContainer starts to do schedule ...");
                 this.schedule();
+
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
 
@@ -405,10 +412,10 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
                 readerTaskConfigs, writerTaskConfigs, transformerList);
 
-
         LOG.debug("contentConfig configuration: "+ JSON.toJSONString(contentConfig));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
+        System.out.println("最终："+JSON.toJSONString(this.configuration));
 
         return contentConfig.size();
     }
@@ -499,6 +506,7 @@ public class JobContainer extends AbstractContainer {
                 CoreConstant.DATAX_JOB_CONTENT).size();
 
         this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
+        System.out.println("channelsPerTaskGroup是:"+channelsPerTaskGroup+"|||this.needChannelNumber是:"+this.needChannelNumber+"|||taskNumber是："+taskNumber);
         PerfTrace.getInstance().setChannelNumber(needChannelNumber);
 
         /**
@@ -653,25 +661,27 @@ public class JobContainer extends AbstractContainer {
      */
     private Reader.Job initJobReader(
             JobPluginCollector jobPluginCollector) {
+        // 插件名称 （job.content[0].reader.name）
         this.readerPluginName = this.configuration.getString(
                 CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-
+        System.out.println("插件名称"+this.readerPluginName);
         Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
                 PluginType.READER, this.readerPluginName);
 
-        // 设置reader的jobConfig
+        // 设置reader的jobConfig  (job.content[0].reader.parameter)
         jobReader.setPluginJobConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
 
-        // 设置reader的readerConfig
+        // 设置reader的readerConfig (job.content[0].writer.parameter)
         jobReader.setPeerPluginJobConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
 
         jobReader.setJobPluginCollector(jobPluginCollector);
-        jobReader.init();
+        jobReader.init();       //读插件初始化(可以见具体读插件实现类,例如MysqlReader)
 
+        //重置回归原classLoader
         classLoaderSwapper.restoreCurrentThreadClassLoader();
         return jobReader;
     }

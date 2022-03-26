@@ -38,7 +38,7 @@ public class Engine {
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
-        // 绑定column转换信息
+        // 绑定column转换信息  时间格式，时区，编码等,在core.json中的common.column配置项
         ColumnCast.bind(allConf);
 
         /**
@@ -46,6 +46,8 @@ public class Engine {
          */
         LoadUtil.bind(allConf);
 
+        //判断是任务组还是一个任务,默认是job
+        //实例化对应的JobContainer或TaskGroupContainer,启动对应的start方法。
         boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
         //JobContainer会在schedule后再行进行设置和调整值
@@ -198,6 +200,10 @@ public class Engine {
         return -1;
     }
 
+    //Engine接收三个主要参数:job、jobid、mode
+    //job代表任务配置json的位置，
+    //jobid表示此次任务的id，默认为-1，
+    //mode表示执行的模式。
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
         try {

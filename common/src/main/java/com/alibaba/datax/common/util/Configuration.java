@@ -645,7 +645,9 @@ public class Configuration {
 
 	/**
 	 * 合并其他Configuration，并修改两者冲突的KV配置
-	 * 
+	 *
+	 * 将job路径的文件内容转换成Configuration,将项目本身存在在${datax.home}/conf/core.json中的文件与自定义的配置文件合并，更新core.json有而自定义job中没有的配置。
+	 *
 	 * @param another
 	 *            合并加入的第三方Configuration
 	 * @param updateWhenConflict

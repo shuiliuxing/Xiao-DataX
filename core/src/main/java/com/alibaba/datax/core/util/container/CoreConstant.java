@@ -13,6 +13,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL = "core.container.taskGroup.channel";
 
+	//判断是任务组还是一个任务
+	//实例化对应的JobContainer或TaskGroupContainer,启动对应的start方法。
 	public static final String DATAX_CORE_CONTAINER_MODEL = "core.container.model";
 
 	public static final String DATAX_CORE_CONTAINER_JOB_ID = "core.container.job.id";

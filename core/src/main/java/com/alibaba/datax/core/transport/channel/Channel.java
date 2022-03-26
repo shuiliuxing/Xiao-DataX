@@ -52,7 +52,7 @@ public abstract class Channel {
         int capacity = configuration.getInt(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 2048);
         long byteSpeed = configuration.getLong(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024); // 限制1Mb/S
         long recordSpeed = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD, 10000);
 
