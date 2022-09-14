@@ -12,8 +12,15 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.*;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.Warehouse;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
+import org.apache.hadoop.hive.ql.metadata.Hive;
+import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
@@ -25,6 +32,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -215,6 +223,7 @@ public  class HdfsHelper {
                 for (Iterator it1=tmpFiles.iterator(),it2=endFiles.iterator();it1.hasNext()&&it2.hasNext();){
                     String srcFile = it1.next().toString();
                     String dstFile = it2.next().toString();
+                    dstFile = dstFile.replace("\\","/");
                     Path srcFilePah = new Path(srcFile);
                     Path dstFilePah = new Path(dstFile);
                     if(tmpFilesParent == null){
@@ -555,5 +564,74 @@ public  class HdfsHelper {
         }
         transportResult.setLeft(recordList);
         return transportResult;
+    }
+
+    public boolean updateHiveMetadata1(String hiveMetastoreUris, String hiveDatabase, String hiveTable,
+                                      String partitionValues) {
+        try {
+            // 登录hdfs
+            UserGroupInformation.setConfiguration(hadoopConf);
+            UserGroupInformation ugi;
+            ugi = UserGroupInformation.getCurrentUser();
+            ugi.doAs((PrivilegedExceptionAction<Hive>) () -> {
+                updateHiveMetadata(hiveMetastoreUris, hiveDatabase, hiveTable, partitionValues);
+                return  null;
+            });
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    // 同步hive分区信息
+    public boolean updateHiveMetadata(String hiveMetastoreUris, String hiveDatabase, String hiveTable,
+                                      String partitionValues){
+        HiveConf hiveConf = new HiveConf();
+        hiveConf.setVar(HiveConf.ConfVars.METASTOREURIS, hiveMetastoreUris);
+        Hive hive =null;
+        try {
+            // 获取表对象
+            hive = Hive.get(hiveConf);
+            Table table=hive.getTable(hiveDatabase, hiveTable);
+
+            // 构建分区
+            List<String> partitionList=Arrays.asList(partitionValues.split(","));
+
+            // 创建hdfs分区目录路径
+            List<FieldSchema> fieldSchemaList=table.getPartitionKeys();
+            fieldSchemaList=fieldSchemaList.subList(0, partitionList.size());
+            String location=table.getPath().toUri().getPath()+"/"+ Warehouse.makePartName(fieldSchemaList, partitionList);
+            // 不存在则创建
+            Path p=new Path(location);
+            if(!fileSystem.exists(p)){
+                fileSystem.mkdirs(p);
+            }
+
+            // 创建分区对象
+            StorageDescriptor partitionSd=new StorageDescriptor(table.getSd());
+            partitionSd.setLocation(location);
+
+            Partition partition=new Partition();
+            partition.setDbName(hiveDatabase);
+            partition.setTableName(hiveTable);
+            partition.setSd(partitionSd);
+            partition.setValues(partitionList);
+            // 同步分区元数据
+            List<Partition> partitions=new ArrayList<Partition>();
+            partitions.add(partition);
+            hive.getMSC().add_partitions(partitions, true, true);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally{
+            try {
+                if (null != hive) {
+                    hive.getMSC().close();
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+        return true;
     }
 }

@@ -31,6 +31,12 @@ public class HdfsWriter extends Writer {
         private String fieldDelimiter;
         private String compress;
         private String encoding;
+
+        private String hiveMetastoreUris;
+        private String hiveDatabase;
+        private String hiveTable;
+        private String partitionValues;
+
         private HashSet<String> tmpFiles = new HashSet<String>();//临时文件全路径
         private HashSet<String> endFiles = new HashSet<String>();//最终文件全路径
 
@@ -143,6 +149,12 @@ public class HdfsWriter extends Writer {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("不支持您配置的编码格式:[%s]", encoding), e);
             }
+
+            // hive partition
+            this.hiveMetastoreUris=this.writerSliceConfig.getString(Key.HIVE_METASTORE_URIS, null);
+            this.hiveDatabase=this.writerSliceConfig.getString(Key.HIVE_DATABASE, null);
+            this.hiveTable=this.writerSliceConfig.getString(Key.HIVE_TABLE, null);
+            this.partitionValues=this.writerSliceConfig.getString(Key.PARTITION_VALUES, null);
         }
 
         @Override
@@ -187,6 +199,11 @@ public class HdfsWriter extends Writer {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("您配置的path: [%s] 不存在, 请先在hive端创建对应的数据库和表.", path));
             }
+            // 若写入hive分区表
+            if(StringUtils.isNotBlank(this.hiveMetastoreUris) && StringUtils.isNotBlank(this.hiveDatabase)
+                    && StringUtils.isNotBlank(this.hiveTable) && StringUtils.isNotBlank(this.partitionValues)){
+                hdfsHelper.updateHiveMetadata1(this.hiveMetastoreUris, this.hiveDatabase, this.hiveTable, this.partitionValues);
+            }
         }
 
         @Override
@@ -214,7 +231,7 @@ public class HdfsWriter extends Writer {
 
             String fileSuffix;
             //临时存放路径
-            String storePath =  buildTmpFilePath(this.path);
+            String storePath =  buildTmpFilePath(this.path);//"/apps/hive/warehouse/test3.db/t_orc_user/"
             //最终存放路径
             String endStorePath = buildFilePath();
             this.path = endStorePath;
@@ -303,9 +320,9 @@ public class HdfsWriter extends Writer {
                     break;
             }
             String tmpSuffix;
-            tmpSuffix = UUID.randomUUID().toString().replace('-', '_');
+            tmpSuffix = UUID.randomUUID().toString().replace('-', '_'); // "ab70bf39_62ad_4934_8f0b_aa870cfd7797"
             if (!isEndWithSeparator) {
-                tmpFilePath = String.format("%s__%s%s", userPath, tmpSuffix, IOUtils.DIR_SEPARATOR);
+                tmpFilePath = String.format("%s__%s%s", userPath, tmpSuffix, IOUtils.DIR_SEPARATOR_UNIX);    // "/apps/hive/warehouse/test3.db/t_orc_user/__ab70bf39_62ad_4934_8f0b_aa870cfd7797\"
             }else if("/".equals(userPath)){
                 tmpFilePath = String.format("%s__%s%s", userPath, tmpSuffix, IOUtils.DIR_SEPARATOR);
             }else{

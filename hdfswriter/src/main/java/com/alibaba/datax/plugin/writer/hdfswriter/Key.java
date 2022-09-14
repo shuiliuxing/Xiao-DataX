@@ -8,6 +8,12 @@ public class Key {
     public static final String PATH = "path";
     //must have
     public final static String DEFAULT_FS = "defaultFS";
+
+    public static final String HIVE_METASTORE_URIS = "hiveMetastoreUris";
+    public static final String HIVE_DATABASE = "hiveDatabase";
+    public static final String HIVE_TABLE = "hiveTable";
+    public static final String PARTITION_VALUES = "partitionValues";
+
     //must have
     public final static String FILE_TYPE = "fileType";
     // must have
