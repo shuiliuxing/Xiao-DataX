@@ -4,9 +4,11 @@ public enum SupportHiveDataType {
     TINYINT,
     SMALLINT,
     INT,
+    INTEGER,
     BIGINT,
     FLOAT,
     DOUBLE,
+    DECIMAL,
 
     TIMESTAMP,
     DATE,
@@ -14,6 +16,7 @@ public enum SupportHiveDataType {
     STRING,
     VARCHAR,
     CHAR,
-
-    BOOLEAN
+    LONG,
+    BOOLEAN,
+    BINARY
 }

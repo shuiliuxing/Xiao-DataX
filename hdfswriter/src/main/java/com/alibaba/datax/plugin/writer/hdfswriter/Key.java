@@ -39,4 +39,8 @@ public class Key {
     public static final String KERBEROS_PRINCIPAL = "kerberosPrincipal";
     // hadoop config
     public static final String HADOOP_CONFIG = "hadoopConfig";
+
+    public static final String PRECISION = "precision";
+
+    public static final String SCALE = "scale";
 }
